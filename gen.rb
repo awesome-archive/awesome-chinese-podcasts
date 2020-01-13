@@ -39,6 +39,10 @@ def gen_icon(icon_src, width=20, height=20, link=nil, title=nil)
   end
 end
 
+def space(n=1)
+  '&nbsp;' * n
+end
+
 def link_to(title, href)
   %Q|<a href="#{href}" title="#{href}">#{title}</a>|
 end
@@ -54,6 +58,24 @@ opened = config['head'] + "\n  - [查看收拢版本](https://github.com/fffx/aw
 
 # =begin
 # https://gist.github.com/joyrexus/16041f2426450e73f5df9391f7f7ae5f
+podcast_proc = Proc.new do |podcast, name, open=false|
+  <<~CONTENT
+  <details #{"open='true'" if open}>
+  <summary title='展开'>
+    #{link_to(name, podcast['website'])} #{duration_badge(podcast)}
+  </summary>
+  <p>
+
+    #{podcast['highlight']}
+  </p>
+
+  <p>
+
+  > #{podcast['description']} #{space} #{rss_icon(podcast['rss'])}
+  </p>
+  </details>
+  CONTENT
+end
 podcasts_h.each do |category, podcasts|
   puts category
   opened << category_head(category)
@@ -61,28 +83,8 @@ podcasts_h.each do |category, podcasts|
   podcasts.sort_by!{|p| p['name'] }.each do |podcast|
     validate! podcast
     name = podcast['featured'] ? "<b>#{podcast['name']} 👍</b>" : podcast['name']
-    collapsed << <<~CONTENT
-    <details>
-     <summary title='展开'>
-       #{link_to(name, podcast['website'])} #{duration_badge(podcast)} &nbsp;&nbsp; #{rss_icon(podcast['rss'])}
-     </summary>
-     <p>
-
-     > #{podcast['description']}
-     </p>
-    </details>
-    CONTENT
-    opened << <<~CONTENT
-    <details open=true>
-     <summary title='展开'>
-       #{link_to(name, podcast['website'])} &nbsp;&nbsp; #{rss_icon(podcast['rss'])}
-     </summary>
-     <p>
-
-     > #{podcast['description']}
-     </p>
-    </details>
-    CONTENT
+    collapsed << podcast_proc.call(podcast, name, false)
+    opened << podcast_proc.call(podcast, name, true)
   end
 end
 # =end
